@@ -1,5 +1,7 @@
 # AxiomRAG
 
+[![CI](https://github.com/Awakenlegend/Axiomrag/actions/workflows/ci.yml/badge.svg)](https://github.com/Awakenlegend/Axiomrag/actions/workflows/ci.yml)
+
 **AxiomRAG** is an evidence-first Retrieval-Augmented Generation (RAG) application for asking questions over uploaded PDF and TXT documents. It is designed to retrieve relevant passages, generate answers grounded in those passages, expose supporting evidence, verify answer claims, and abstain when the available evidence does not meet the configured reliability policy.
 
 > **Project status:** This README describes the implementation currently present in this repository. The current retrieval and verification logic includes BM25 and token-vector similarity, heuristic reranking, a custom MCTS-style evidence-selection routine, and overlap/similarity-based claim checks. These are not the same as a learned dense-embedding retriever, a neural cross-encoder reranker, or a trained Natural Language Inference (NLI) model. See [Implementation notes and limitations](#implementation-notes-and-limitations).
@@ -71,10 +73,17 @@ Axiomrag/
 ├── server/
 │   ├── _core/                # External LLM integration
 │   ├── fixtures/             # Test fixture documents
+│   ├── rag/
+│   │   ├── generation.ts     # LLM answer generation and fallback
+│   │   ├── retrieval.ts      # BM25, vector scoring, reranking, selection
+│   │   ├── routes.ts         # RAG API handlers and persistence flow
+│   │   ├── text.ts           # Upload validation, extraction, chunking, text utilities
+│   │   ├── types.ts          # Shared RAG and database types
+│   │   └── verification.ts   # Claim checks and extractive answer helper
 │   ├── db.ts                 # Database connection and migrations
 │   ├── index.ts              # Express server and frontend hosting
 │   ├── rag.test.ts           # RAG and ingestion tests
-│   └── rag.ts                # Retrieval, generation, verification, and API routes
+│   └── rag.ts                # Public RAG module exports
 ├── .env.example              # Environment variable template
 ├── Dockerfile
 ├── package.json
