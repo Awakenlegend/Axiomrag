@@ -8,9 +8,6 @@ import { randomUUID } from "node:crypto";
 const execFileAsync = promisify(execFile);
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
-const execFileAsync = promisify(execFile);
-const MAX_FILE_BYTES = 50 * 1024 * 1024;
-
 export class UploadError extends Error {
   constructor(readonly status: number, message: string) {
     super(message);
