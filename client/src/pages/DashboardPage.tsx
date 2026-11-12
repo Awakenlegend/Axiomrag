@@ -1,17 +1,159 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { Activity, ArrowRight, CheckCircle2, ChevronRight, Database, FileCheck2, Gauge, Play, RotateCcw, ShieldCheck } from "lucide-react";
+import { ArrowRight, Database, FileCheck2, Gauge, ShieldCheck } from "lucide-react";
 import { Shell } from "../components/AppShell";
 import { Stat } from "../components/MetricCard";
 import { Pipeline } from "../components/PipelineOverview";
 
-export default function DashboardPage() {
-  const [running, setRunning] = useState(false);
-  return <Shell><div className="page-section">
-    <div className="topbar" style={{ marginBottom: 23 }}><div><div className="eyebrow">Thursday, November 05, 2026</div><h1 style={{ marginTop: 8 }}>Your evidence workspace.</h1><p className="muted" style={{ margin: "8px 0 0", fontSize: 13 }}>Ready for another rigorous answer.</p></div><button className="btn btn-primary" onClick={() => setRunning(!running)}>{running ? <RotateCcw size={15} /> : <Play size={15} />}{running ? "Running evaluation" : "Run evaluation"}</button></div>
-    <div className="card hero"><div className="hero-content"><div className="eyebrow" style={{ color: "#80b9ff" }}>Adaptive Self-Correction / v0.9.4</div><h2 style={{ fontSize: 30, marginTop: 12 }}>Answers that know when<br />the evidence is not enough.</h2><p>AxiomRAG combines retrieval, reasoning, and claim-level verification into one transparent loop. Every response is scored, traced, and corrected before it reaches you.</p><Link className="btn btn-secondary" href="/workspace">Open research workspace <ArrowRight size={15} /></Link></div></div>
-    <div className="grid stats-grid"><Stat label="Reliability score" value="94.8%" change="↑ 3.2% this week" icon={Gauge} /><Stat label="Documents indexed" value="128" change="↑ 12 this month" icon={Database} /><Stat label="Claims verified" value="2,641" change="↑ 18.6% this week" icon={FileCheck2} /><Stat label="Abstention rate" value="6.4%" change="↓ 1.1% this week" icon={ShieldCheck} /></div>
-    <div className="grid content-grid"><div className="grid" style={{ gap: 16 }}><Pipeline /><div className="card table-card"><div className="card-pad section-head"><div><h3>Recent query traces</h3><span className="tiny muted">Your latest reasoning runs</span></div><Link href="/verification" className="btn btn-ghost">View all <ChevronRight size={14} /></Link></div><div className="table-wrap"><table><thead><tr><th>Query</th><th>Evidence</th><th>Reliability</th><th>Status</th></tr></thead><tbody>{[["How does MCTS improve evidence selection?","12 chunks","96.2%","Verified"],["Compare hybrid retrieval strategies","8 chunks","91.7%","Verified"],["When should a RAG system abstain?","4 chunks","88.1%","Review"]].map(row => <tr key={row[0]}><td>{row[0]}</td><td className="mono tiny">{row[1]}</td><td className="mono tiny" style={{ color: "#74dcae" }}>{row[2]}</td><td><span className={`status ${row[3] === "Review" ? "amber" : "green"}`}>{row[3]}</span></td></tr>)}</tbody></table></div></div></div><div className="card evidence-card"><div className="section-head"><div><h3>Evidence health</h3><span className="tiny muted">Corpus quality overview</span></div><Activity size={17} color="#6f9cff" /></div>{[["Source coverage","92%"],["Citation precision","97%"],["Contradiction rate","4%"],["Freshness index","86%"]].map(([label,value], index) => <div className="evidence-item" key={label}><div className="evidence-label"><span className="muted">{label}</span><span className="mono" style={{ color: index === 2 ? "#f3c16e" : "#b4d2f5" }}>{value}</span></div><div className="evidence-bar"><div className="evidence-fill" style={{ width: value }} /></div></div>)}<div style={{ marginTop: 18, padding: 13, borderRadius: 9, background: "rgba(95,215,166,.06)", color: "#78dbaf", fontSize: 11, lineHeight: 1.6 }}><CheckCircle2 size={14} style={{ verticalAlign: "-3px", marginRight: 5 }} /> Your corpus is healthy enough for high-confidence answers.</div></div></div>
-  </div></Shell>;
-}
+type Summary = {
+  runs: number;
+  reliability: number;
+  hallucinationRate: number;
+  abstentionRate: number;
+  correctionRate: number;
+};
 
+type QueryRun = {
+  id: string;
+  question: string;
+  createdAt: string;
+  reliability: number;
+  abstained: boolean;
+  corrections: number;
+};
+
+const emptySummary: Summary = {
+  runs: 0,
+  reliability: 0,
+  hallucinationRate: 0,
+  abstentionRate: 0,
+  correctionRate: 0,
+};
+
+export default function DashboardPage() {
+  const [summary, setSummary] = useState<Summary>(emptySummary);
+  const [documentCount, setDocumentCount] = useState<number | null>(null);
+  const [runs, setRuns] = useState<QueryRun[]>([]);
+  const [status, setStatus] = useState("Loading workspace data…");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDashboard() {
+      try {
+        const [summaryResponse, documentsResponse, runsResponse] = await Promise.all([
+          fetch("/api/rag/evaluation"),
+          fetch("/api/rag/documents"),
+          fetch("/api/rag/runs"),
+        ]);
+
+        if (!summaryResponse.ok || !documentsResponse.ok || !runsResponse.ok) {
+          throw new Error("The dashboard API returned an error.");
+        }
+
+        const [summaryData, documentsData, runsData] = await Promise.all([
+          summaryResponse.json(),
+          documentsResponse.json(),
+          runsResponse.json(),
+        ]);
+
+        if (cancelled) return;
+        setSummary(summaryData);
+        setDocumentCount(Array.isArray(documentsData.documents) ? documentsData.documents.length : 0);
+        setRuns(Array.isArray(runsData.runs) ? runsData.runs : []);
+        setStatus("Showing data from the connected application database.");
+      } catch {
+        if (!cancelled) setStatus("Dashboard data is unavailable. Check the server and database connection.");
+      }
+    }
+
+    void loadDashboard();
+    return () => { cancelled = true; };
+  }, []);
+
+  return (
+    <Shell>
+      <div className="page-section">
+        <div className="topbar" style={{ marginBottom: 23 }}>
+          <div>
+            <div className="eyebrow">AxiomRAG / Workspace overview</div>
+            <h1 style={{ marginTop: 8 }}>Your evidence workspace.</h1>
+            <p className="muted" style={{ margin: "8px 0 0", fontSize: 13 }}>{status}</p>
+          </div>
+          <Link className="btn btn-primary" href="/workspace">Open research workspace <ArrowRight size={15} /></Link>
+        </div>
+
+        <div className="card hero">
+          <div className="hero-content">
+            <div className="eyebrow" style={{ color: "#80b9ff" }}>Document-grounded RAG prototype</div>
+            <h2 style={{ fontSize: 30, marginTop: 12 }}>Answers that know when<br />the evidence is not enough.</h2>
+            <p>AxiomRAG retrieves passages from your documents, generates evidence-grounded responses, and applies claim checks and an abstention policy before returning an answer.</p>
+            <Link className="btn btn-secondary" href="/workspace">Open research workspace <ArrowRight size={15} /></Link>
+          </div>
+        </div>
+
+        <div className="grid stats-grid">
+          <Stat label="Average reliability estimate" value={summary.runs ? `${Math.round(summary.reliability * 100)}%` : "—"} change={summary.runs ? `Across ${summary.runs} saved runs · heuristic` : "No saved query runs yet"} icon={Gauge} />
+          <Stat label="Documents indexed" value={documentCount === null ? "—" : String(documentCount)} change="PDF and TXT documents in the corpus" icon={Database} />
+          <Stat label="Saved query runs" value={String(summary.runs)} change="Recent runs stored by the application" icon={FileCheck2} />
+          <Stat label="Abstention rate" value={summary.runs ? `${Math.round(summary.abstentionRate * 100)}%` : "—"} change="Based on the current answer policy" icon={ShieldCheck} />
+        </div>
+
+        <div className="grid content-grid">
+          <div className="grid" style={{ gap: 16 }}>
+            <Pipeline />
+            <div className="card table-card">
+              <div className="card-pad section-head">
+                <div>
+                  <h3>Recent query runs</h3>
+                  <span className="tiny muted">Saved requests and application policy outcomes</span>
+                </div>
+                <Link href="/verification" className="btn btn-ghost">Verification <ArrowRight size={14} /></Link>
+              </div>
+              {runs.length ? (
+                <div className="table-wrap">
+                  <table>
+                    <thead><tr><th>Question</th><th>Date</th><th>Policy score</th><th>Decision</th></tr></thead>
+                    <tbody>
+                      {runs.slice(0, 6).map(run => (
+                        <tr key={run.id}>
+                          <td>{run.question}</td>
+                          <td className="mono tiny">{new Date(run.createdAt).toLocaleDateString()}</td>
+                          <td className="mono tiny">{Math.round(run.reliability * 100)}%</td>
+                          <td><span className={`status ${run.abstained ? "amber" : "green"}`}>{run.abstained ? "Abstained" : "Answer returned"}</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="empty-state">No saved query runs yet. Upload a document and ask a question to begin.</div>
+              )}
+            </div>
+          </div>
+
+          <div className="card evidence-card">
+            <div className="section-head">
+              <div><h3>Implementation snapshot</h3><span className="tiny muted">Current repository pipeline</span></div>
+              <Database size={17} color="#6f9cff" />
+            </div>
+            {[
+              ["Retrieval", "BM25 + token-vector cosine"],
+              ["Reranking", "Heuristic relevance score"],
+              ["Evidence selection", "Custom MCTS-style search"],
+              ["Answer generation", "Configured Manus LLM + fallback"],
+              ["Claim checks", "Lexical and vector similarity"],
+            ].map(([label, value]) => (
+              <div className="evidence-item" key={label}>
+                <div className="evidence-label"><span className="muted">{label}</span><span className="mono tiny">{value}</span></div>
+              </div>
+            ))}
+            <p className="tiny muted" style={{ marginTop: 14, lineHeight: 1.7 }}>
+              Claim checks and reliability values are heuristic. A trained NLI model and neural cross-encoder are not integrated in the current implementation.
+            </p>
+          </div>
+        </div>
+      </div>
+    </Shell>
+  );
+}
