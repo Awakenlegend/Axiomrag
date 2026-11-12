@@ -44,9 +44,8 @@ export function Shell({ children }: { children: ReactNode }) {
           <Link href="/about" className={`nav-item ${location === "/about" ? "active" : ""}`}><Info size={17} /><span>About</span></Link>
         </nav>
         <div className="sidebar-footer">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 9 }}><span className="tiny muted">SYSTEM STATUS</span><span className="status green">ONLINE</span></div>
-          <div className="tiny muted">Corpus synchronized</div>
-          <div style={{ height: 4, background: "#18334e", borderRadius: 4, marginTop: 9 }}><div style={{ width: "88%", height: "100%", background: "#5dd6a0", borderRadius: 4 }} /></div>
+          <div className="tiny muted">DOCUMENT WORKSPACE</div>
+          <div className="tiny muted" style={{ marginTop: 8, lineHeight: 1.7 }}>Upload PDF or TXT files to build a searchable evidence corpus.</div>
         </div>
       </aside>
       <main className="main-panel">
