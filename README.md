@@ -101,20 +101,15 @@ pnpm install
 
 ### Configure environment
 
-Set the database connection required by the application:
+Create your local environment file from the template:
 
-```env
-DATABASE_URL=mysql://USER:PASSWORD@HOST:3306/DATABASE
+```bash
+cp .env.example .env
 ```
 
-For LLM-backed answer generation, configure the Manus LLM integration:
+Set `DATABASE_URL` to your MySQL connection string. For LLM-backed answer generation, also set `MANUS_API_URL` and `MANUS_API_KEY` using the exact endpoint and credentials supplied by your Manus environment.
 
-```env
-MANUS_API_URL=your_manus_api_url
-MANUS_API_KEY=your_manus_api_key
-```
-
-Use the exact endpoint and credential values supplied by your Manus environment. Do not commit secrets to the repository. The server retains an extractive evidence-based fallback when the LLM integration is unavailable.
+Do not commit `.env` or any real credentials. The server retains an extractive evidence-based fallback when the LLM integration is unavailable.
 
 ### Apply database migrations
 
