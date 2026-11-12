@@ -1,0 +1,12 @@
+import { useEffect, useState } from "react";
+import { Settings } from "lucide-react";
+import { Shell } from "../components/AppShell";
+
+export default function SettingsPage() {
+  const [settings, setSettings] = useState({ minReliability: 0.68, abstainBelow: 0.62, maxEvidenceChunks: 3, requiredCitations: true });
+  const [status, setStatus] = useState("Loading saved policy…");
+  useEffect(() => { fetch("/api/rag/settings").then(response => response.json()).then(data => { setSettings(data); setStatus("Saved policy loaded"); }).catch(() => setStatus("Using local defaults")); }, []);
+  const save = async () => { setStatus("Saving…"); const response = await fetch("/api/rag/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settings) }); setStatus(response.ok ? "Policy saved and active for new queries" : "Unable to save policy"); };
+  return <Shell><div className="page-section"><div className="page-title"><div className="eyebrow">System / Settings</div><h1>Make the guardrails yours.</h1><p>Configure the policy used by retrieval, verification, self-correction, and abstention.</p></div><div className="card form-card"><h3>Reliability & abstention</h3><p className="muted tiny" style={{ margin: "7px 0 20px" }}>{status}</p><label className="label">Minimum answer reliability</label><input className="field" type="number" min="0" max="1" step="0.01" value={settings.minReliability} onChange={event => setSettings({ ...settings, minReliability: Number(event.target.value) })} /><label className="label">Abstention threshold</label><input className="field" type="number" min="0" max="1" step="0.01" value={settings.abstainBelow} onChange={event => setSettings({ ...settings, abstainBelow: Number(event.target.value) })} /><label className="label">Maximum evidence chunks</label><input className="field" type="number" min="1" max="8" step="1" value={settings.maxEvidenceChunks} onChange={event => setSettings({ ...settings, maxEvidenceChunks: Number(event.target.value) })} /><div style={{ display: "flex", alignItems: "center", gap: 10, color: "#bad0e9", fontSize: 12, margin: "2px 0 22px" }}><input type="checkbox" checked={settings.requiredCitations} onChange={event => setSettings({ ...settings, requiredCitations: event.target.checked })} /> Require claim-level citations in every answer</div><button className="btn btn-primary" onClick={save}>Save active policy</button></div></div></Shell>;
+}
+
