@@ -1,8 +1,19 @@
+# Dependencies and build output
 node_modules/
 dist/
+coverage/
+
+# Environment and secrets
 .env
 .env.*
 !.env.example
-coverage/
+
+# Local application data and logs
 data/
 *.log
+
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
