@@ -47,6 +47,43 @@
 | Styling | Tailwind CSS 4 and project CSS |
 | Testing | Node test runner through `tsx` |
 
+## Repository structure
+
+```text
+Axiomrag/
+├── client/
+│   ├── public/
+│   │   └── manus-routes.json
+│   └── src/
+│       ├── components/       # Shared layout and reusable UI
+│       ├── contexts/         # React context providers
+│       ├── pages/            # Route-level screens
+│       ├── App.tsx           # Route registration and app providers
+│       ├── const.ts          # Platform-specific client helpers
+│       ├── index.css         # Global styles
+│       └── main.tsx          # Frontend entry point
+├── docs/
+│   └── ARCHITECTURE.md       # Architecture and request flow
+├── drizzle/
+│   ├── schema.ts             # Database table definitions
+│   └── *.sql                 # Versioned SQL migrations
+├── scripts/                  # Database and maintenance scripts
+├── server/
+│   ├── _core/                # External LLM integration
+│   ├── fixtures/             # Test fixture documents
+│   ├── db.ts                 # Database connection and migrations
+│   ├── index.ts              # Express server and frontend hosting
+│   ├── rag.test.ts           # RAG and ingestion tests
+│   └── rag.ts                # Retrieval, generation, verification, and API routes
+├── .env.example              # Environment variable template
+├── Dockerfile
+├── package.json
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml
+├── tsconfig.json
+└── vite.config.ts
+```
+
 ## Getting started
 
 ### Prerequisites
