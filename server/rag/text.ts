@@ -48,12 +48,12 @@ export async function prepareUpload(suppliedName: unknown, suppliedType: unknown
 const STOP = new Set("the a an and or to of in on for with from by is are was were this that how does do can into as it its be improve system using when should not all across every each more than what why where".split(" "));
 const normalizeToken = (token: string) => ({ selection: "select", selected: "select", selecting: "select", retrieval: "retriev", retrieved: "retriev", retrieve: "retriev", combines: "combin", answers: "answer", answered: "answer", generation: "generat", generated: "generat", systems: "system" } as Record<string, string>)[token] ?? token;
 export const tokenize = (value: string) => value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(token => token.length > 2 && !STOP.has(token)).map(normalizeToken);
-const sentenceSplit = (value: string) => {
+export const sentenceSplit = (value: string) => {
   const protectedText = value.replace(/(\w)\.(\d)/g, "$1§$2").replace(/(\d)\.(\d)/g, "$1§$2");
   return (protectedText.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(sentence => sentence.replace(/§/g, ".").trim()).filter(Boolean) ?? []);
 };
-const toTerms = (text: string) => tokenize(text).reduce<Record<string, number>>((terms, token) => { terms[token] = (terms[token] ?? 0) + 1; return terms; }, {});
-const cosine = (left: Record<string, number>, right: Record<string, number>) => {
+export const toTerms = (text: string) => tokenize(text).reduce<Record<string, number>>((terms, token) => { terms[token] = (terms[token] ?? 0) + 1; return terms; }, {});
+export const cosine = (left: Record<string, number>, right: Record<string, number>) => {
   const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
   let dot = 0; let leftNorm = 0; let rightNorm = 0;
   for (const key of keys) { dot += (left[key] ?? 0) * (right[key] ?? 0); leftNorm += (left[key] ?? 0) ** 2; rightNorm += (right[key] ?? 0) ** 2; }
